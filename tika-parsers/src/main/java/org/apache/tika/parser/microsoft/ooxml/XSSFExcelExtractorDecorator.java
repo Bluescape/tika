@@ -146,10 +146,12 @@ public class XSSFExcelExtractorDecorator extends AbstractOOXMLExtractor {
             throw new XmlException(oe);
         }
 
+        int sheetCount = 0;
         while (iter.hasNext()) {
             SheetTextAsHTML sheetExtractor = new SheetTextAsHTML(config, xhtml);
             PackagePart sheetPart = null;
             try (InputStream stream = iter.next()) {
+                sheetCount++;
                 sheetPart = iter.getSheetPart();
 
                 addDrawingHyperLinks(sheetPart);
@@ -159,7 +161,9 @@ public class XSSFExcelExtractorDecorator extends AbstractOOXMLExtractor {
 
                 // Start, and output the sheet name
                 xhtml.startElement("div");
-                xhtml.element("h1", iter.getSheetName());
+                String sheetName = iter.getSheetName();
+                this.metadata.add("SheetNames", sheetName);
+                xhtml.element("h1", sheetName);
 
                 // Extract the main sheet contents
                 xhtml.startElement("table");
@@ -194,6 +198,7 @@ public class XSSFExcelExtractorDecorator extends AbstractOOXMLExtractor {
             // All done with this sheet
             xhtml.endElement("div");
         }
+        this.metadata.set("SheetCount", String.valueOf(sheetCount));
 
         //consider adding this back to POI
         try (InputStream wbData = xssfReader.getWorkbookData()) {

@@ -94,6 +94,9 @@ public class ExcelExtractor extends AbstractPOIFSExtractor {
 
     private static final String WORKBOOK_ENTRY = "Workbook";
     private static final String BOOK_ENTRY = "Book";
+
+    private Metadata metadata;
+
     /**
      * <code>true</code> if the HSSFListener should be registered
      * to listen for all records or <code>false</code> (the default)
@@ -104,6 +107,7 @@ public class ExcelExtractor extends AbstractPOIFSExtractor {
 
     public ExcelExtractor(ParseContext context, Metadata metadata) {
         super(context, metadata);
+        this.metadata = metadata;
     }
 
     /**
@@ -168,6 +172,11 @@ public class ExcelExtractor extends AbstractPOIFSExtractor {
         TikaHSSFListener listener = new TikaHSSFListener(xhtml, locale, this, officeParserConfig);
         listener.processFile(root, isListenForAllRecords());
         listener.throwStoredException();
+        List<String> sheetNames = listener.getSheetNames();
+        this.metadata.set("SheetCount", String.valueOf(sheetNames.size()));
+        for (String name : sheetNames) {
+            this.metadata.add("SheetNames", name);
+        }
 
         for (Entry entry : root) {
             if (entry.getName().startsWith("MBD")
@@ -262,6 +271,10 @@ public class ExcelExtractor extends AbstractPOIFSExtractor {
             this.formatListener = new TikaFormatTrackingHSSFListener(this, locale);
             this.tikaExcelDataFormatter = new TikaExcelDataFormatter(locale);
             this.officeParserConfig = officeParserConfig;
+        }
+
+        public List<String> getSheetNames() {
+            return this.sheetNames;
         }
 
         /**
